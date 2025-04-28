@@ -64,7 +64,7 @@ Create Operator
 #Add Suzan mesh to the scene
 class OBJECT_OT_add_suzan(bpy.types.Operator):
     bl_idname = "object.add_suzan"
-    bl_label = "Add Suzan"
+    bl_label = "Suzan"
     bl_description = "Add Suzan to the scene"
     bl_options = {'REGISTER', 'UNDO'}
     # The actual action. Add monkey mesh
@@ -75,12 +75,23 @@ class OBJECT_OT_add_suzan(bpy.types.Operator):
 #Add Sphere mesh to the scene
 class OBJECT_OT_add_sphere(bpy.types.Operator):
     bl_idname = "object.add_sphere"
-    bl_label = "Add Sphere"
+    bl_label = "Sphere"
     bl_description = "Add a sphere to the scene"
     bl_options = {'REGISTER', 'UNDO'}
     # The actual action. Add UV Sphere
     def execute(self, context):
         bpy.ops.mesh.primitive_uv_sphere_add()
+        return {'FINISHED'}
+    
+#Add Ico Sphere mesh to the scene
+class OBJECT_OT_add_ico_sphere(bpy.types.Operator):
+    bl_idname = "object.add_ico_sphere"
+    bl_label = "Ico"
+    bl_description = "Add a ico sphere to the scene"
+    bl_options = {'REGISTER', 'UNDO'}
+    # The actual action. Add UV Sphere
+    def execute(self, context):
+        bpy.ops.mesh.primitive_ico_sphere_add()
         return {'FINISHED'}
 
 #Create light based on the chosen enum type
@@ -92,13 +103,10 @@ class LIGHTCREATOR_OT_create_light(bpy.types.Operator):
     # The actual action. Add light
     def execute(self, context):
         props = context.scene.light_creator_props
-        #light_type = context.scene.light_creator_props.light_type
-        #bpy.ops.object.light_add(type=light_type, align='WORLD', location=(0, 0, 2))
         
         # Create the light data
         light_data = bpy.data.lights.new(name="New_Light", type=props.light_type)
         light_data.color = props.light_color
-        
     
         # Create the light object
         light_object = bpy.data.objects.new(name="New_Light", object_data=light_data)
@@ -186,9 +194,9 @@ class VIEW3D_PT_add_mesh_panel(bpy.types.Panel):
         layout.label(text="Add Mesh:")
         row = layout.row() #create first row
         row.operator("object.add_suzan", icon='MONKEY') #link Operator with UI button
-        row = layout.row() #create second row
         row.operator("object.add_sphere", icon='SPHERE') #link Operator with UI button
-
+        row.operator("object.add_ico_sphere", icon='MESH_ICOSPHERE') #link Operator with UI button
+        
         layout.label(text="Subdivide:")
         row = layout.row()
         row.operator("mesh.smooth_object_button", icon='MESH_CIRCLE')
@@ -243,7 +251,8 @@ Register
 # Register and unregister UI Panel and Operator
 classes = [
     OBJECT_OT_add_suzan, 
-    OBJECT_OT_add_sphere, 
+    OBJECT_OT_add_sphere,
+    OBJECT_OT_add_ico_sphere, 
     SmoothObject_OT_smooth_object, 
     BATCHEXPORT_OT_batch_export, 
     ScaleProperties, 
