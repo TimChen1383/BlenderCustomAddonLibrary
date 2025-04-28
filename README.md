@@ -1,6 +1,6 @@
 # BlenderCustomAddonLibrary
  
-- some common Blender Add On template ready to use
+- some common Blender Add On templates ready to use
 
 - Common  UI
 
