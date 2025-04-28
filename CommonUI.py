@@ -11,6 +11,7 @@ bl_info = {
 
 import bpy
 import os
+from bpy.props import EnumProperty, FloatVectorProperty
 
 """------------------------------------------------------------------------
 Functions
@@ -34,8 +35,9 @@ class ScaleProperties(bpy.types.PropertyGroup):
     scale_y: bpy.props.FloatProperty(name="Y", default=1.0, update=lambda self, context: update_scale(context))
     scale_z: bpy.props.FloatProperty(name="Z", default=1.0, update=lambda self, context: update_scale(context))
 
-#Create a light enum
+
 class LightCreatorProperties(bpy.types.PropertyGroup):
+    #Create a light enum
     light_type: bpy.props.EnumProperty(
         name="Type",
         description="Choose type of light to create",
@@ -46,7 +48,15 @@ class LightCreatorProperties(bpy.types.PropertyGroup):
         ],
         default='POINT',
     )
-
+    #Create a light color
+    light_color: FloatVectorProperty(
+        name="Light Color",
+        description="Color of the light",
+        subtype='COLOR',
+        default=(1.0, 1.0, 1.0),
+        min=0.0,
+        max=1.0
+    )
 
 """------------------------------------------------------------------------
 Create Operator
@@ -78,10 +88,27 @@ class LIGHTCREATOR_OT_create_light(bpy.types.Operator):
     bl_idname = "lightcreator.create_light"
     bl_label = "Create Light"
     bl_description = "Create the selected type of light"
+    bl_options = {'REGISTER', 'UNDO'}
     # The actual action. Add light
     def execute(self, context):
-        light_type = context.scene.light_creator_props.light_type
-        bpy.ops.object.light_add(type=light_type, align='WORLD', location=(0, 0, 2))
+        props = context.scene.light_creator_props
+        #light_type = context.scene.light_creator_props.light_type
+        #bpy.ops.object.light_add(type=light_type, align='WORLD', location=(0, 0, 2))
+        
+        # Create the light data
+        light_data = bpy.data.lights.new(name="New_Light", type=props.light_type)
+        light_data.color = props.light_color
+        
+    
+        # Create the light object
+        light_object = bpy.data.objects.new(name="New_Light", object_data=light_data)
+        
+        # Link light object to the scene
+        collection = context.collection
+        collection.objects.link(light_object)
+        
+        # Set the light at the 3D cursor location
+        light_object.location = context.scene.cursor.location
         return {'FINISHED'}
 
 # Subdivide and add shade smooth to the selected object
@@ -147,10 +174,12 @@ Create UI for running Operator
 ------------------------------------------------------------------------"""        
 class VIEW3D_PT_add_mesh_panel(bpy.types.Panel):
     bl_label = "Common UI"
-    bl_idname = "VIEW3D_PT_add_mesh"
+    bl_idname = "VIEW3D_PT_add_mesh" 
+    #Show up in 3D viewport. Can be switched to other viewport like Shader Editor or Compositor
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Commom UI"
+    bl_context = "objectmode" #Only show up in object more
 
     def draw(self, context):
         layout = self.layout
@@ -176,12 +205,20 @@ class VIEW3D_PT_add_lighting_panel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Commom UI"
+    bl_context = "objectmode" #Only show up in object more
     
     def draw(self, context):
         layout = self.layout
-        LightProps = context.scene.light_creator_props
-        layout.prop(LightProps, "light_type")#create light enum
-        layout.operator("lightcreator.create_light", text="Create Light")#create light
+        props = context.scene.light_creator_props
+        
+        layout.prop(props, "light_type")
+        layout.prop(props, "light_color")
+        layout.operator("lightcreator.create_light", text="Create Light")
+        
+        
+        #LightProps = context.scene.light_creator_props
+        #layout.prop(LightProps, "light_type")#create light enum
+        #layout.operator("lightcreator.create_light", text="Create Light")#create light
 
 class VIEW3D_PT_add_output_panel(bpy.types.Panel):
     bl_label = "Output"
@@ -189,6 +226,7 @@ class VIEW3D_PT_add_output_panel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Commom UI"
+    bl_context = "objectmode" #Only show up in object more
     
     def draw(self, context):
         layout = self.layout
@@ -203,7 +241,18 @@ class VIEW3D_PT_add_output_panel(bpy.types.Panel):
 Register
 ------------------------------------------------------------------------""" 
 # Register and unregister UI Panel and Operator
-classes = [OBJECT_OT_add_suzan, OBJECT_OT_add_sphere, SmoothObject_OT_smooth_object, BATCHEXPORT_OT_batch_export, ScaleProperties, LIGHTCREATOR_OT_create_light, LightCreatorProperties, VIEW3D_PT_add_mesh_panel, VIEW3D_PT_add_lighting_panel, VIEW3D_PT_add_output_panel]
+classes = [
+    OBJECT_OT_add_suzan, 
+    OBJECT_OT_add_sphere, 
+    SmoothObject_OT_smooth_object, 
+    BATCHEXPORT_OT_batch_export, 
+    ScaleProperties, 
+    LIGHTCREATOR_OT_create_light, 
+    LightCreatorProperties, 
+    VIEW3D_PT_add_mesh_panel, 
+    VIEW3D_PT_add_lighting_panel, 
+    VIEW3D_PT_add_output_panel
+    ]
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
