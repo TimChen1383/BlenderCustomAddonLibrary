@@ -125,13 +125,20 @@ class SmoothObject_OT_smooth_object(bpy.types.Operator):
     bl_idname = "mesh.smooth_object_button"
     bl_description = "Smooth the chosen object"
     bl_options = {'REGISTER', 'UNDO'}
+    
+    @classmethod
+    # The button will be greyed out if nothing get selected
+    def poll(cls, context):
+        return any(obj.select_get() and obj.type == 'MESH' for obj in context.selected_objects)
+
     # The actual action. Add subdivide modifier and shade smooth
     def execute(self, context):
-        obj = bpy.context.active_object
-        subsurf_mod = obj.modifiers.new(name="Subdivision",type='SUBSURF')
-        subsurf_mod.levels = 2
-        subsurf_mod.render_levels = 2
-        bpy.ops.object.shade_smooth()
+        selected_meshes = [obj for obj in context.selected_objects if obj.type == 'MESH']
+        for obj in selected_meshes:
+            modifier = obj.modifiers.new(name="Subdivision", type='SUBSURF')
+            modifier.levels = 2
+            modifier.render_levels = 2
+        self.report({'INFO'}, f"Subdivision added to {len(selected_meshes)} object(s).")
         return {'FINISHED'}
    
 # Batch export all selected meshes
@@ -223,11 +230,6 @@ class VIEW3D_PT_add_lighting_panel(bpy.types.Panel):
         layout.prop(props, "light_color")
         layout.operator("lightcreator.create_light", text="Create Light")
         
-        
-        #LightProps = context.scene.light_creator_props
-        #layout.prop(LightProps, "light_type")#create light enum
-        #layout.operator("lightcreator.create_light", text="Create Light")#create light
-
 class VIEW3D_PT_add_output_panel(bpy.types.Panel):
     bl_label = "Output"
     bl_idname = "VIEW3D_PT_output"
